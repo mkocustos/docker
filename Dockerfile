@@ -1,4 +1,4 @@
-FROM debian:13-slim AS production-build
+FROM debian:13-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2 AS production-build
 
 ENV container=docker \
     LC_ALL=C.UTF-8
@@ -141,7 +141,7 @@ ENV PATH=$PATH:/dovecot/bin:/dovecot/sbin \
 WORKDIR /build
 
 
-FROM debian:13-slim AS production-base
+FROM debian:13-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2 AS production-base
 
 LABEL org.opencontainers.image.authors="dovecot@dovecot.org"
 

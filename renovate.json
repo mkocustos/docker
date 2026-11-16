@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["dockerfile", "github-actions"],
+  "includePaths": ["Dockerfile", ".github/workflows/renovate.yml"],
+  "minimumReleaseAge": "3 hours",
+  "minimumReleaseAgeBehaviour": "timestamp-optional",
+  "packageRules": [
+    {
+      "description": "Rebuilds of debian:13-slim; docker-image.yml runs imaptest before publishing to Docker Hub",
+      "matchUpdateTypes": ["digest"],
+      "automerge": true,
+      "ignoreTests": true
+    },
+    {
+      "description": "Keep the Renovate action itself current",
+      "matchPackageNames": ["renovatebot/github-action"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "ignoreTests": true
+    }
+  ]
+}

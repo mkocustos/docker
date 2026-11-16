@@ -1,0 +1,42 @@
+name: Renovate
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+    # debian has more than 1000 tags. Anonymous requests to the Docker Hub tag
+    # API stop after 10 pages (HTTP 403), so Renovate gets no release timestamps
+    # and minimumReleaseAge would pass immediately. Basic auth does not lift
+    # that limit; a bearer token from /v2/auth/token does.
+    - name: Docker Hub login
+      id: dockerhub
+      env:
+        DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+        DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      run: |
+        jwt=$(jq -n --arg i "$DH_USER" --arg s "$DH_TOKEN" '{identifier:$i,secret:$s}' \
+          | curl -sf -H 'Content-Type: application/json' -d @- https://hub.docker.com/v2/auth/token \
+          | jq -r '.access_token // empty')
+        [ -n "$jwt" ] || { echo "::error::Docker Hub login failed"; exit 1; }
+        echo "::add-mask::$jwt"
+        echo "jwt=$jwt" >> "$GITHUB_OUTPUT"
+    - uses: renovatebot/github-action@266fef21329c44765ad42f9dea1f01f5d2d91084 # v46.3.13
+      with:
+        # Must not be GITHUB_TOKEN: pushes made with it do not trigger
+        # rebuild-on-base-update.yml after an automerge.
+        token: ${{ secrets.RENOVATE_TOKEN }}
+      env:
+        RENOVATE_REPOSITORIES: '["${{ github.repository }}"]'
+        RENOVATE_HOST_RULES: '[{"hostType":"docker","matchHost":"hub.docker.com","token":"${{ steps.dockerhub.outputs.jwt }}"},{"hostType":"docker","matchHost":"docker.io","username":"${{ secrets.DOCKERHUB_USERNAME }}","password":"${{ secrets.DOCKERHUB_TOKEN }}"}]'
